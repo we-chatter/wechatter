@@ -1,0 +1,63 @@
+{
+  "intent": {
+    "id": 111111,
+    "name": "request_restaurant",
+    "confidence": 0.729736864566803
+  },
+  "entities": [
+    {
+      "entity": "cuisine",
+      "start": 36,
+      "end": 43,
+      "value": "italian",
+      "extractor": "DIETClassifier"
+    },
+    {
+      "entity": "cuisine",
+      "start": 53,
+      "end": 60,
+      "value": "chinese",
+      "extractor": "DIETClassifier"
+    }
+  ],
+  "intent_ranking": [
+    {
+      "id": 111111,
+      "name": "request_restaurant",
+      "confidence": 0.729736864566803
+    },
+    {
+      "name": "inform",
+      "confidence": 0.2636376619338989
+    },
+    {
+      "name": "stop",
+      "confidence": 0.004086764995008707
+    },
+    {
+      "name": "affirm",
+      "confidence": 0.0013642017729580402
+    },
+    {
+      "name": "deny",
+      "confidence": 0.000910164148081094
+    },
+    {
+      "name": "bot_challenge",
+      "confidence": 0.00020915297500323504
+    },
+    {
+      "name": "thankyou",
+      "confidence": 0.000049770085752243176
+    },
+    {
+      "name": "chitchat",
+      "confidence": 0.0000047886046559142414
+    },
+    {
+      "name": "greet",
+      "confidence": 5.810792913507612E-7
+    }
+  ],
+  "text": "奔驰车真的是太好开了，我想买一辆。"
+}
