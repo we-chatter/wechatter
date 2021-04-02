@@ -39,6 +39,7 @@ from typing import (
 
 import wechatter.shared.utils.common
 from typing import Union
+from enum import Enum
 
 from wechatter.shared.dialogue_config import DOCS_URL_TRAINING_DATA
 from wechatter.shared.dm.dm_config import (
@@ -68,3 +69,34 @@ from wechatter.shared.nlu.constants import (
 
 logger = logging.getLogger(__name__)
 
+
+class EventVerbosity(Enum):
+    """Filter on which events to include in tracker dumps."""
+
+    # no events will be included
+    NONE = 1
+
+    # all events, that contribute to the trackers state are included
+    # these are all you need to reconstruct the tracker state
+    APPLIED = 2
+
+    # include even more events, in this case everything that comes
+    # after the most recent restart event. this will also include
+    # utterances that got reverted and actions that got undone.
+    AFTER_RESTART = 3
+
+    # include every logged event
+    ALL = 4
+
+class AnySlotDict(dict):
+    """A slot dictionary that pretends every slot exists, by creating slots on demand.
+
+    This only uses the generic slot type! This means certain functionality wont work,
+    e.g. properly featurizing the slot."""
+
+    def __missing__(self, key) -> Slot:
+        value = self[key] = Slot(key)
+        return value
+
+    def __contains__(self, key) -> bool:
+        return True

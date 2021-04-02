@@ -73,7 +73,7 @@ app.update_config(CONFIG)  # 系统配置信息
 
 @app.route("/")
 async def test(request):
-    return text('Welcome to wechatty dialogue engine')
+    return text('Welcome to wechatty dialogue engine，this version is:' + wechatter.__version__)
 
 
 @app.get('/version')
@@ -83,10 +83,8 @@ async def version(request: Request):
     :param request:
     :return:
     """
-    return response.json(
-        {
-            "version": wechatter.__version__,
-        }
+    return response.text(
+       "Hello from Wechatter:" + wechatter.__version__
     )
 
 
