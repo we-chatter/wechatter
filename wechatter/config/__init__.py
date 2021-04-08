@@ -12,7 +12,7 @@
 @Desc    :
  
 """
-from config.config import Config
+from wechatter.config.config import Config
 
 
 def load_config():

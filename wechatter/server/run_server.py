@@ -12,11 +12,18 @@
 @Desc    :
 
 """
-import datetime
-import json
-import os
-import sys
+import asyncio
+import concurrent.futures
 import logging
+import multiprocessing
+import os
+import tempfile
+import traceback
+from collections import defaultdict
+from functools import reduce, wraps
+from inspect import isawaitable
+from pathlib import Path
+from http import HTTPStatus
 
 from typing import (
     Any,
@@ -31,20 +38,32 @@ from typing import (
 )
 from pathlib import Path
 
-parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, parentdir)
+# parentdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# sys.path.insert(0, parentdir)
 
 from wechatter.config import CONFIG
 
+import aiohttp
 from sanic import Sanic, response
 from sanic.response import text, HTTPResponse
 from sanic.request import Request
 from sanic_cors import CORS
 
 import wechatter
+import wechatter.utils
+import wechatter.shared
+import wechatter.utils.endpoints
+import wechatter.shared.utils
+import wechatter.shared.utils.io
 from wechatter.model_training import train_async
 
-logging.basicConfig(format='%(levelname)s:%(message)s',level=logging.INFO)
+from wechatter.shared.dialogue_config import (
+    DOCS_URL_TRAINING_DATA,
+    DEFAULT_MODELS_PATH,
+    DEFAULT_DOMAIN_PATH
+)
+
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 app = Sanic(__name__)
 
@@ -72,6 +91,8 @@ def configure_cors(
 # ):
 #     app = Sanic(__name__)
 app.update_config(CONFIG)  # 系统配置信息
+
+
 # configure_cors(app, cors_origins)  # 解决跨域问题
 
 
@@ -88,7 +109,7 @@ async def version(request: Request):
     :return:
     """
     return response.text(
-       "Hello from Wechatter:" + wechatter.__version__
+        "Hello from Wechatter:" + wechatter.__version__
     )
 
 
@@ -109,7 +130,6 @@ async def train(request: Request, temporary_directory: Path) -> HTTPResponse:
         return a
     except:
         pass
-
 
 
 def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, Any]:
@@ -151,8 +171,8 @@ def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, 
 
     model_output_directory = str(temp_dir)
     if request_payload.get(
-        "save_to_default_model_directory",
-        wechatter.utils.endpoints.bool_arg(request, "save_to_default_model_directory", True),
+            "save_to_default_model_directory",
+            wechatter.utils.endpoints.bool_arg(request, "save_to_default_model_directory", True),
     ):
         model_output_directory = DEFAULT_MODELS_PATH
 
@@ -167,6 +187,7 @@ def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, 
         core_additional_arguments=_extract_core_additional_arguments(request),
         nlu_additional_arguments=_extract_nlu_additional_arguments(request),
     )
+
 
 def _validate_json_training_payload(rjs: Dict):
     if "config" not in rjs:
@@ -202,6 +223,40 @@ def _validate_json_training_payload(rjs: Dict):
             "'force_training' and 'save_to_default_model_directory'.",
             docs=_docs("/api/http-api"),
         )
+
+
+class ErrorResponse(Exception):
+    """Common exception to handle failing API requests."""
+
+    def __init__(
+        self,
+        status: Union[int, HTTPStatus],
+        reason: Text,
+        message: Text,
+        details: Any = None,
+        help_url: Optional[Text] = None,
+    ) -> None:
+        """Creates error.
+
+        Args:
+            status: The HTTP status code to return.
+            reason: Short summary of the error.
+            message: Detailed explanation of the error.
+            details: Additional details which describe the error. Must be serializable.
+            help_url: URL where users can get further help (e.g. docs).
+        """
+        self.error_info = {
+            "version": wechatter.__version__,
+            "status": "failure",
+            "message": message,
+            "reason": reason,
+            "details": details or {},
+            "help": help_url,
+            "code": status,
+        }
+        self.status = status
+        logging.error(message)
+        super(ErrorResponse, self).__init__()
 
 
 if __name__ == '__main__':

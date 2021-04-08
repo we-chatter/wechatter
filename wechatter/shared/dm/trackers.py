@@ -9,7 +9,7 @@
  
 @Time    :   2021/4/1 5:05 下午
  
-@Desc    :
+@Desc    :   对话状态跟踪
  
 """
 
@@ -53,6 +53,7 @@ from wechatter.shared.dm.dm_config import (
     ACTION_SESSION_START_NAME,
     ACTION_LISTEN_NAME,
 )
+from wechatter.shared.dm.slots import Slot
 from wechatter.shared.exceptions import UnsupportedFeatureException
 from wechatter.shared.nlu.constants import (
     ENTITY_ATTRIBUTE_TYPE,
@@ -88,6 +89,7 @@ class EventVerbosity(Enum):
     # include every logged event
     ALL = 4
 
+
 class AnySlotDict(dict):
     """A slot dictionary that pretends every slot exists, by creating slots on demand.
 
@@ -100,3 +102,10 @@ class AnySlotDict(dict):
 
     def __contains__(self, key) -> bool:
         return True
+
+
+class DialogueStateTracker:
+    """
+    dst实现
+    """
+
