@@ -113,7 +113,8 @@ async def version(request: Request):
     )
 
 
-async def train(request: Request, temporary_directory: Path) -> HTTPResponse:
+@app.post("/model/train")
+async def train(request: Request) -> HTTPResponse:
     """
     训练模型
     方式一：加载数据库，写入临时文件，训练模型
@@ -121,18 +122,33 @@ async def train(request: Request, temporary_directory: Path) -> HTTPResponse:
     :param request:
     :return:
     """
-    training_payload = _training_payload_from_json(request, temporary_directory)
+    training_payload = _training_payload_from_json(request)
 
     try:
-        a = 111
+        # a = 111
         # with app.active_training_processes.get_lock():
         #     app.active_training_processes.value += 1
-        return a
-    except:
-        pass
+        training_result = await train_async(**training_payload)
+
+        if training_result.model:
+            filename = os.path.basename(training_result.model)
+
+            return await response.file(
+                training_result.model,
+                filename=filename,
+
+            )
+        else:
+            raise ErrorResponse(
+                HTTPStatus.INTERNAL_SERVER_ERROR,
+                "TrainingError",
+                "Ran training, but it finished without a trained model.",
+            )
+    except ErrorResponse as e:
+        raise e
 
 
-def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, Any]:
+def _training_payload_from_json(request: Request) -> Dict[Text, Any]:
     """
     读取请求的json文件，同时写入一个临时文件夹
     :param request:
@@ -146,6 +162,7 @@ def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, 
     request_payload = request.json
     _validate_json_training_payload(request_payload)
 
+    temp_dir= ''
     config_path = os.path.join(temp_dir, "config.yml")
 
     wechatter.shared.utils.io.write_text_file(request_payload["config"], config_path)
@@ -184,7 +201,7 @@ def _training_payload_from_json(request: Request, temp_dir: Path) -> Dict[Text, 
         force_training=request_payload.get(
             "force", wechatter.utils.endpoints.bool_arg(request, "force_training", False)
         ),
-        core_additional_arguments=_extract_core_additional_arguments(request),
+        dm_additional_arguments=_extract_dm_additional_arguments(request),
         nlu_additional_arguments=_extract_nlu_additional_arguments(request),
     )
 

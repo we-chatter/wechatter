@@ -43,9 +43,11 @@ import wechatter.shared.utils.validation
 import wechatter.shared.utils.common
 import wechatter.shared.dm
 import wechatter.shared.dm.dm_config
+from wechatter.shared.dm.events import UserUttered, SlotSet
+from wechatter.shared.dm.slots import Slot, AnySlot, TextSlot, CategoricalSlot
 
 from wechatter.shared.exceptions import WechatterException, YamlException, YamlSyntaxException
-from wechatter.shared.dm.slots import Slot
+
 
 
 CARRY_OVER_SLOTS_KEY = "carry_over_slots_to_new_session"
@@ -80,6 +82,10 @@ ALL_DOMAIN_KEYS = [
 PREV_PREFIX = "prev_"
 
 logger = logging.getLogger(__name__)
+
+
+SubState = Dict[Text, Union[Text, Tuple[Union[float, Text]]]]
+State = Dict[Text, SubState]
 
 
 class InvalidDomain(WechatterException):
@@ -1272,7 +1278,7 @@ class Domain:
                 # substitute previous rule action with last_ml_action_sub_state
                 if last_ml_action_sub_state:
                     state[
-                        wechatter.shared.core.constants.PREVIOUS_ACTION
+                        wechatter.shared.dm.dm_config.PREVIOUS_ACTION
                     ] = last_ml_action_sub_state
 
             states.append(self._clean_state(state))
@@ -1310,14 +1316,14 @@ class Domain:
         wechatter.shared.utils.io.create_directory_for_file(domain_spec_path)
 
         metadata = {"states": self.input_states}
-        rasa.shared.utils.io.dump_obj_as_json_to_file(domain_spec_path, metadata)
+        wechatter.shared.utils.io.dump_obj_as_json_to_file(domain_spec_path, metadata)
 
     @classmethod
     def load_specification(cls, path: Text) -> Dict[Text, Any]:
         """Load a domains specification from a dumped model directory."""
         metadata_path = os.path.join(path, "domain.json")
 
-        return json.loads(rasa.shared.utils.io.read_file(metadata_path))
+        return json.loads(wechatter.shared.utils.io.read_file(metadata_path))
 
     def compare_with_specification(self, path: Text) -> bool:
         """Compare the domain spec of the current and the loaded domain.
@@ -1406,7 +1412,7 @@ class Domain:
 
         for intent_name, intent_props in intent_properties.items():
             if (
-                    intent_name in rasa.shared.core.constants.DEFAULT_INTENTS
+                    intent_name in wechatter.shared.dm.dm_config.DEFAULT_INTENTS
                     and intent_name not in self.overridden_default_intents
             ):
                 # Default intents should be not dumped with the domain
@@ -1417,7 +1423,7 @@ class Domain:
             use_entities = set(
                 entity
                 for entity in intent_props[USED_ENTITIES_KEY]
-                if rasa.shared.core.constants.ENTITY_LABEL_SEPARATOR not in entity
+                if wechatter.shared.dm.dm_config.ENTITY_LABEL_SEPARATOR not in entity
             )
             ignore_entities = set(self.entities) - use_entities
             if len(use_entities) == len(self.entities):
@@ -1506,12 +1512,12 @@ class Domain:
     def persist(self, filename: Union[Text, Path]) -> None:
         """Write domain to a file."""
         as_yaml = self.as_yaml(clean_before_dump=False)
-        rasa.shared.utils.io.write_text_file(as_yaml, filename)
+        wechatter.shared.utils.io.write_text_file(as_yaml, filename)
 
     def persist_clean(self, filename: Union[Text, Path]) -> None:
         """Write cleaned domain to a file."""
         as_yaml = self.as_yaml(clean_before_dump=True)
-        rasa.shared.utils.io.write_text_file(as_yaml, filename)
+        wechatter.shared.utils.io.write_text_file(as_yaml, filename)
 
     def as_yaml(self, clean_before_dump: bool = False) -> Text:
         """Dump the `Domain` object as a YAML string.
@@ -1528,7 +1534,7 @@ class Domain:
         # thanks to the `should_preserve_key_order` argument
         # of `dump_obj_as_yaml_to_string`
         domain_data: Dict[Text, Any] = {
-            KEY_TRAINING_DATA_FORMAT_VERSION: rasa.shared.constants.LATEST_TRAINING_DATA_FORMAT_VERSION
+            KEY_TRAINING_DATA_FORMAT_VERSION: wechatter.shared.dialogue_config.LATEST_TRAINING_DATA_FORMAT_VERSION
         }
         if clean_before_dump:
             domain_data.update(self.cleaned_domain())
@@ -1539,7 +1545,7 @@ class Domain:
                 domain_data[KEY_RESPONSES]
             )
 
-        return rasa.shared.utils.io.dump_obj_as_yaml_to_string(
+        return wechatter.shared.utils.io.dump_obj_as_yaml_to_string(
             domain_data, should_preserve_key_order=True
         )
 
@@ -1547,7 +1553,7 @@ class Domain:
         """Return the configuration for an intent."""
         return self.intent_properties.get(intent_name, {})
 
-    @rasa.shared.utils.common.lazy_property
+    @wechatter.shared.utils.common.lazy_property
     def intents(self):
         return sorted(self.intent_properties.keys())
 
@@ -1570,7 +1576,7 @@ class Domain:
         return [
             a
             for a in self.user_actions_and_forms
-            if a not in rasa.shared.core.constants.DEFAULT_ACTION_NAMES
+            if a not in wechatter.shared.dm.dm_config.DEFAULT_ACTION_NAMES
         ]
 
     @staticmethod

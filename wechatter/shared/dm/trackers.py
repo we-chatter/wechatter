@@ -55,7 +55,7 @@ from wechatter.shared.dm.dm_config import (
 )
 from wechatter.shared.dm.slots import Slot
 from wechatter.shared.exceptions import UnsupportedFeatureException
-from wechatter.shared.nlu.constants import (
+from wechatter.shared.nlu.nlu_config import (
     ENTITY_ATTRIBUTE_TYPE,
     INTENT,
     TEXT,

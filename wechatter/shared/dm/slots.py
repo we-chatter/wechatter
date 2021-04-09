@@ -35,7 +35,9 @@ class InvalidSlotConfigError(WechatterException, ValueError):
 
 
 class Slot:
-    """Key-value store for storing information during a conversation."""
+    """
+    Key-value store for storing information during a conversation.
+    """
 
     type_name = None
 
@@ -163,3 +165,84 @@ class Slot:
             "auto_fill": self.auto_fill,
             "influence_conversation": self.influence_conversation,
         }
+
+
+class FloatSlot:
+    """
+
+    """
+    type_name = "float"
+
+    def __init__(
+            self,
+            name: Text,
+            initial_value: Optional[float] = None,
+            value_reset_delay: Optional[int] = None,
+            auto_fill: bool = True,
+            max_value: float = 1.0,
+            min_value: float = 0.0,
+            influence_conversation: bool = True,
+    ) -> None:
+        super().__init__(
+            name,
+            initial_value,
+            value_reset_delay,
+            auto_fill,
+            influence_conversation
+        )
+        self.max_value = max_value
+        self.min_value = min_value
+
+        if min_value >= max_value:
+            raise InvalidSlotConfigError(
+                "Float slot ('{}') created with an invalid range "
+                "using min ({}) and max ({}) values. Make sure "
+                "min is smaller than max."
+                "".format(self.name, self.min_value, self.max_value)
+            )
+
+        if initial_value is not None and not (min_value <= initial_value <= max_value):
+            wechatter.shared.utils.io.raise_warning(
+                f"Float slot ('{self.name}') created with an initial value "
+                f"{self.value}. This value is outside of the configured min "
+                f"({self.min_value}) and max ({self.max_value}) values."
+            )
+
+    def _as_feature(self) -> List[float]:
+        try:
+            capped_value = max(self.min_value, min(self.max_value, float(self.value)))
+            if abs(self.max_value - self.min_value) > 0:
+                covered_range = abs(self.max_value - self.min_value)
+            else:
+                covered_range = 1
+            return [1.0, (capped_value - self.min_value) / covered_range]
+        except (TypeError, ValueError):
+            return [0.0, 0.0]
+
+    def persistence_info(self) -> Dict[Text, Any]:
+        """Returns relevant information to persist this slot."""
+        d = super().persistence_info()
+        d["max_value"] = self.max_value
+        d["min_value"] = self.min_value
+        return d
+
+    def _feature_dimensionality(self) -> int:
+        return len(self.as_feature())
+
+class AnySlot:
+    """
+
+    """
+    pass
+
+
+class TextSlot:
+    """
+
+    """
+
+
+class CategoricalSlot:
+    """
+
+    """

@@ -40,7 +40,7 @@ from typing import (
 import wechatter.shared.utils.common
 from typing import Union
 
-from wechatter.shared.constants import DOCS_URL_TRAINING_DATA
+from wechatter.shared.dialogue_config import DOCS_URL_TRAINING_DATA
 from wechatter.shared.dm.dm_config import (
     LOOP_NAME,
     EXTERNAL_MESSAGE_PREFIX,
@@ -53,7 +53,7 @@ from wechatter.shared.dm.dm_config import (
     ACTION_LISTEN_NAME,
 )
 from wechatter.shared.exceptions import UnsupportedFeatureException
-from wechatter.shared.nlu.constants import (
+from wechatter.shared.nlu.nlu_config import (
     ENTITY_ATTRIBUTE_TYPE,
     INTENT,
     TEXT,
