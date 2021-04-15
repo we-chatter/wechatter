@@ -125,7 +125,6 @@ async def train(request: Request) -> HTTPResponse:
     training_payload = _training_payload_from_json(request)
 
     try:
-        # a = 111
         # with app.active_training_processes.get_lock():
         #     app.active_training_processes.value += 1
         training_result = await train_async(**training_payload)
@@ -186,11 +185,14 @@ def _training_payload_from_json(request: Request) -> Dict[Text, Any]:
         domain_path = os.path.join(temp_dir, "domain.yml")
         wechatter.shared.utils.io.write_text_file(request_payload["domain"], domain_path)
 
+    if "model_name" in request_payload:     # 制定模型名称
+        model_name = request_payload["model_name"]
+
     model_output_directory = str(temp_dir)
     if request_payload.get(
             "save_to_default_model_directory",
             wechatter.utils.endpoints.bool_arg(request, "save_to_default_model_directory", True),
-    ):
+    ):  # 如果参数里save_to_default_model_directory = True，则保存在默认的文件夹里
         model_output_directory = DEFAULT_MODELS_PATH
 
     return dict(
@@ -233,13 +235,14 @@ def _validate_json_training_payload(rjs: Dict):
             {"parameter": "domain", "in": "body"},
         )
 
-    if "force" in rjs or "save_to_default_model_directory" in rjs:
-        wechatter.shared.utils.io.raise_deprecation_warning(
-            "Specifying 'force' and 'save_to_default_model_directory' as part of the "
-            "JSON payload is deprecated. Please use the header arguments "
-            "'force_training' and 'save_to_default_model_directory'.",
-            docs=_docs("/api/http-api"),
-        )
+    # if "force" in rjs or "save_to_default_model_directory" in rjs:
+    #     wechatter.shared.utils.io.raise_deprecation_warning(
+    #         "Specifying 'force' and 'save_to_default_model_directory' as part of the "
+    #         "JSON payload is deprecated. Please use the header arguments "
+    #         "'force_training' and 'save_to_default_model_directory'.",
+    #         docs=_docs("/api/http-api"),
+    #     )
+    # if "model_name" in rjs
 
 
 class ErrorResponse(Exception):

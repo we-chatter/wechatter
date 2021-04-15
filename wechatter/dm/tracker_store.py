@@ -9,7 +9,7 @@
  
 @Time    :   2021/4/1 3:32 下午
  
-@Desc    :
+@Desc    :   对话状态存储
  
 """
 
@@ -34,12 +34,20 @@ from typing import (
     Union,
     TYPE_CHECKING,
 )
+from wechatter.shared.dm.conversation import Dialogue
+from wechatter.shared.dm.domain import Domain
+from wechatter.shared.dm.events import SessionStarted
+from wechatter.shared.exceptions import ConnectionException
+
+from wechatter.utils.endpoints import EndpointConfig
 
 logger = logging.getLogger(__name__)
 
 
 class TrackerStore:
-    """Represents common behavior and interface for all `TrackerStore`s."""
+    """
+    Represents common behavior and interface for all `TrackerStore`s.
+    """
 
     def __init__(
             self,

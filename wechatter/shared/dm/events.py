@@ -17,12 +17,9 @@ import abc
 import json
 import logging
 import re
-from abc import ABC
-
-import jsonpickle
 import time
 import uuid
-from dateutil import parser
+from abc import ABC
 from datetime import datetime
 from typing import (
     List,
@@ -31,15 +28,16 @@ from typing import (
     Any,
     Type,
     Optional,
-    TYPE_CHECKING,
     Iterable,
     cast,
     Tuple,
 )
-
-import wechatter.shared.utils.common
 from typing import Union
 
+import jsonpickle
+from dateutil import parser
+
+import wechatter.shared.utils.common
 from wechatter.shared.dialogue_config import DOCS_URL_TRAINING_DATA
 from wechatter.shared.dm.dm_config import (
     LOOP_NAME,
@@ -52,6 +50,7 @@ from wechatter.shared.dm.dm_config import (
     ACTION_SESSION_START_NAME,
     ACTION_LISTEN_NAME,
 )
+from wechatter.shared.dm.trackers import DialogueStateTracker
 from wechatter.shared.exceptions import UnsupportedFeatureException
 from wechatter.shared.nlu.nlu_config import (
     ENTITY_ATTRIBUTE_TYPE,
@@ -66,13 +65,12 @@ from wechatter.shared.nlu.nlu_config import (
     ENTITY_ATTRIBUTE_GROUP,
 )
 
-from wechatter.shared.dm.trackers import DialogueStateTracker
-
 logger = logging.getLogger(__name__)
 
 
 def deserialise_events(serialized_events: List[Dict[Text, Any]]) -> List["Event"]:
-    """Convert a list of dictionaries to a list of corresponding events.
+    """
+    Convert a list of dictionaries to a list of corresponding events.
 
     Example format:
         [{"event": "slot", "value": 5, "name": "my_slot"}]
@@ -330,7 +328,7 @@ class Event(ABC):
     ) -> Optional[Type["Event"]]:
         """Returns a slots class by its type name."""
 
-        for cls in rasa.shared.utils.common.all_subclasses(Event):
+        for cls in wechatter.shared.utils.common.all_subclasses(Event):
             if cls.type_name == type_name:
                 return cls
         if type_name == "topic":

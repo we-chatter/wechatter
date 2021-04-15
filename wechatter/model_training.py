@@ -28,6 +28,7 @@ from typing import (
 )
 
 from wechatter.shared.dm.domain import Domain
+from wechatter.shared.importers.importer import TrainingDataImporter
 
 from wechatter.shared.dialogue_config import (
     DEFAULT_MODELS_PATH
@@ -42,19 +43,19 @@ class TrainingResult(NamedTuple):
 
 
 async def train_async(
-    domain: Union[Domain, Text],
+        domain: Union[Domain, Text],
         config: Text,
         training_files: Optional[Union[Text, List[Text]]],
         output: Text = DEFAULT_MODELS_PATH,
         dry_run: bool = False,
         force_training: bool = False,
-        fixed_model_name: Optional[Text] = None,
+        model_name: Optional[Text] = None,
         persist_nlu_training_data: bool = False,
         core_additional_arguments: Optional[Dict] = None,
         nlu_additional_arguments: Optional[Dict] = None,
         model_to_finetune: Optional[Text] = None,
         finetuning_epoch_fraction: float = 1.0,
-    ) -> TrainingResult:
+) -> TrainingResult:
     """
     进行异步训练
     :param domain:
@@ -63,7 +64,7 @@ async def train_async(
     :param output:
     :param dry_run:
     :param force_training: bool值，如果为True，则在数据没有变动的情况下也训练
-    :param fixed_model_name: 模型名称
+    :param model_name: 模型名称
     :param persist_nlu_training_data:
     :param core_additional_arguments:
     :param nlu_additional_arguments:
@@ -81,7 +82,7 @@ async def train_async(
 
         if domain.is_empty():
             nlu_model = await handle_domain_if_not_exists(
-                file_importer, output, fixed_model_name
+                file_importer, output, model_name
             )
             return TrainingResult(model=nlu_model)
 
@@ -91,10 +92,48 @@ async def train_async(
             output,
             dry_run,
             force_training,
-            fixed_model_name,
+            model_name,
             persist_nlu_training_data,
-            core_additional_arguments=core_additional_arguments,
+            dm_additional_arguments=core_additional_arguments,
             nlu_additional_arguments=nlu_additional_arguments,
             model_to_finetune=model_to_finetune,
             finetuning_epoch_fraction=finetuning_epoch_fraction,
         )
+
+
+async def handle_domain_if_not_exists(
+        file_importer: TrainingDataImporter
+):
+    return None
+
+
+async def _train_async_internal(
+        file_importer: TrainingDataImporter,
+        train_path: Text,
+        output_path: Text,
+        dry_run: bool,
+        force_training: bool,
+        model_name: Optional[Text],
+        persist_nlu_training_data: bool,
+        dm_additional_arguments: Optional[Dict] = None,
+        nlu_additional_arguments: Optional[Dict] = None,
+        model_to_finetune: Optional[Text] = None,
+        finetuning_epoch_fraction: float = 1.0,
+) -> TrainingResult:
+    """
+    模型训练
+    :param file_importer:
+    :param train_path:
+    :param output_path:
+    :param dry_run:
+    :param force_training:
+    :param model_name:
+    :param persist_nlu_training_data:
+    :param dm_additional_arguments:
+    :param nlu_additional_arguments:
+    :param model_to_finetune:
+    :param finetuning_epoch_fraction:
+    :return:
+    """
+
+    return TrainingResult(model=old_model)

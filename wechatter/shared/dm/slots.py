@@ -169,7 +169,7 @@ class Slot:
 
 class FloatSlot:
     """
-
+    数字类型slot
     """
     type_name = "float"
 
@@ -229,6 +229,24 @@ class FloatSlot:
     def _feature_dimensionality(self) -> int:
         return len(self.as_feature())
 
+
+class BooleanSlot(Slot):
+    type_name = "bool"
+
+    def _as_feature(self) -> List[float]:
+        try:
+            if self.value is not None:
+                return [1.0, float(bool_from_any(self.value))]
+            else:
+                return [0.0, 0.0]
+        except (TypeError, ValueError):
+            # we couldn't convert the value to float - using default value
+            return [0.0, 0.0]
+
+    def _feature_dimensionality(self) -> int:
+        return len(self.as_feature())
+
+
 class AnySlot:
     """
 
@@ -236,13 +254,54 @@ class AnySlot:
     pass
 
 
-class TextSlot:
+class TextSlot(Slot):
     """
 
     """
+    type_name = "text"
+
+    def _as_feature(self) -> List[float]:
+        return [1.0 if self.value is not None else 0.0]
+
+
+class ListSlot(Slot):
+    """
+
+    """
+    type_name = "list"
+
+    def _as_feature(self) -> List[float]:
+        try:
+            if self.value is not None and len(self.value) > 0:
+                return [1.0]
+            else:
+                return [0.0]
+        except (TypeError, ValueError):
+            # we couldn't convert the value to a list - using default value
+            return [0.0]
 
 
 class CategoricalSlot:
     """
 
     """
+
+
+def bool_from_any(x: Any) -> bool:
+    """ Converts bool/float/int/str to bool or raises error """
+
+    if isinstance(x, bool):
+        return x
+    elif isinstance(x, (float, int)):
+        return x == 1.0
+    elif isinstance(x, str):
+        if x.isnumeric():
+            return float(x) == 1.0
+        elif x.strip().lower() == "true":
+            return True
+        elif x.strip().lower() == "false":
+            return False
+        else:
+            raise ValueError("Cannot convert string to bool")
+    else:
+        raise TypeError("Cannot convert to bool")
